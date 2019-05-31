@@ -23,7 +23,6 @@ class CsvHelper
                 $data = [];
 
                 while (($row = fgetcsv($res, 1000, $r)) !== false) {
-
                     if ($counter > $headRow) {
                         $data[] = $row;
                     }
@@ -49,27 +48,31 @@ class CsvHelper
      * @param array  $arData
      * @param string $r
      * @param array  $arHeads
+     * @param bool   $fileReWrite
      *
      * @return bool
      */
-    public static function arrayToCsv(string $filePath, array $arData, string $r = ';', array $arHeads = []): bool
+    public static function arrayToCsv(string $filePath, array $arData, string $r = ';', array $arHeads = [], bool $fileReWrite = false): bool
     {
         if ($arData) {
-            if (file_exists($filePath)) {
+            if (file_exists($filePath) && $fileReWrite) {
                 unlink($filePath);
             }
 
-            $out = fopen($filePath, 'w');
+            $fileTemp = tmpfile();
+            $pathTempFile = stream_get_meta_data($fileTemp)['uri'];
+            $tempOut  = fopen($pathTempFile, 'w');
 
             if ($arHeads) {
-                fputcsv($out, $arHeads, $r);
+                fputcsv($tempOut, $arHeads, $r);
             }
 
             foreach ($arData as $arItems) {
-                fputcsv($out, $arItems, $r);
+                fputcsv($tempOut, $arItems, $r);
             }
 
-            fclose($out);
+            file_put_contents($filePath, file_get_contents($pathTempFile), FILE_APPEND);
+            fclose($tempOut);
 
             return true;
         }
